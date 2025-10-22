@@ -1,0 +1,46 @@
+version: '3.8'
+services:
+  db:
+    image: mongo:6
+    container_name: gestor_db
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - gestor-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gestor_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - PORT=3000
+    depends_on:
+      - db
+    networks:
+      - gestor-net
+
+  nginx:
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    container_name: gestor_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - gestor-net
+
+volumes:
+  mongo_data:
+
+networks:
+  gestor-net:
+    driver: bridge
